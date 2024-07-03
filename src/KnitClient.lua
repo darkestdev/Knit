@@ -113,11 +113,12 @@ KnitClient.Player = game:GetService("Players").LocalPlayer
 KnitClient.Util = (script.Parent :: Instance).Parent
 
 local Promise = require(KnitClient.Util.Promise)
-local Comm = require(KnitClient.Util.Comm)
-local ClientComm = Comm.ClientComm
+local DarkoCommClient = require(KnitClient.Util.DarkoComm.Client)
 
 local controllers: { [string]: Controller } = {}
 local services: { [string]: Service } = {}
+local ReplicationData: { [string]: string } | nil = {}
+
 local servicesFolder = nil
 
 local started = false
@@ -146,14 +147,18 @@ local function GetMiddlewareForService(serviceName: string)
 end
 
 local function BuildService(serviceName: string)
-	local folder = GetServicesFolder()
-	local middleware = GetMiddlewareForService(serviceName)
-	local clientComm = ClientComm.new(folder, selectedOptions.ServicePromises, serviceName)
-	local service = clientComm:BuildObject(middleware.Inbound, middleware.Outbound)
+	local Middleware = GetMiddlewareForService(serviceName)
+	local ClientComm = DarkoCommClient.new(serviceName, ReplicationData[serviceName], Middleware)
 
-	services[serviceName] = service
+	services[serviceName] = ClientComm:GetServiceMethods()
 
-	return service
+	return services[serviceName]
+end
+
+function KnitClient.GetReplicatorData()
+	local Replicator = (script.Parent :: Instance):WaitForChild("BridgeReplicator")
+
+	ReplicationData = Replicator:InvokeServer()
 end
 
 --[=[

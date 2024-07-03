@@ -138,10 +138,11 @@ local knitRepServiceFolder = Instance.new("Folder")
 knitRepServiceFolder.Name = "Services"
 
 local Promise = require(KnitServer.Util.Promise)
-local Comm = require(KnitServer.Util.Comm)
-local ServerComm = Comm.ServerComm
+local DarkoCommServer = require(KnitServer.Util.DarkoComm.Server)
 
 local services: { [string]: Service } = {}
+local ReplicationData: { [string]: string } = {}
+
 local started = false
 local startedComplete = false
 local onStartedComplete = Instance.new("BindableEvent")
@@ -189,7 +190,9 @@ function KnitServer.CreateService(serviceDef: ServiceDef): Service
 	assert(not started, `Services cannot be created after calling "Knit.Start()"`)
 
 	local service = serviceDef
-	service.KnitComm = ServerComm.new(knitRepServiceFolder, serviceDef.Name)
+
+	service.Network = DarkoCommServer.new(serviceDef.Name)
+	ReplicationData[serviceDef.Name] = service.Network.ReplicationData
 
 	if type(service.Client) ~= "table" then
 		service.Client = { Server = service }
@@ -202,6 +205,21 @@ function KnitServer.CreateService(serviceDef: ServiceDef): Service
 	services[service.Name] = service
 
 	return service
+end
+
+function KnitServer.SetupReplicator()
+	local BridgeReplicator = Instance.new("RemoteFunction")
+	BridgeReplicator.Name = "BridgeReplicator"
+
+	BridgeReplicator.OnServerInvoke = function()
+		if not (startedComplete and started) then
+			return warn("Knit has not started yet!")
+		end
+
+		return ReplicationData
+	end
+
+	BridgeReplicator.Parent = script.Parent
 end
 
 --[=[
@@ -415,13 +433,9 @@ function KnitServer.Start(options: KnitOptions?)
 
 			for k, v in service.Client do
 				if type(v) == "function" then
-					service.KnitComm:WrapMethod(service.Client, k, inbound, outbound)
+					service.Network:WrapMethod(service.Client, k, inbound, outbound)
 				elseif v == SIGNAL_MARKER then
-					service.Client[k] = service.KnitComm:CreateSignal(k, false, inbound, outbound)
-				elseif v == UNRELIABLE_SIGNAL_MARKER then
-					service.Client[k] = service.KnitComm:CreateSignal(k, true, inbound, outbound)
-				elseif type(v) == "table" and v[1] == PROPERTY_MARKER then
-					service.Client[k] = service.KnitComm:CreateProperty(k, v[2], inbound, outbound)
+					service.Client[k] = service.Network:ConstructSignal(k, inbound, outbound)
 				end
 			end
 		end

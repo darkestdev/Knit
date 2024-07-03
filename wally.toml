@@ -1,0 +1,11 @@
+[package]
+name = "darkestdev/knit"
+description = "Knit but instead of Comm, it uses DarkoComm (a very simple BridgeNet2 implementation of Comm)"
+version = "0.1.0"
+license = "MIT"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+DarkoComm = "darkestdev/darkocomm@^0.1.0"
+Promise = "evaera/promise@^4"
