@@ -138,7 +138,7 @@ local knitRepServiceFolder = Instance.new("Folder")
 knitRepServiceFolder.Name = "Services"
 
 local Promise = require(KnitServer.Util.Promise)
-local DarkoCommServer = require(KnitServer.Util.DarkoComm.Server)
+local DarkoCommServer = require(KnitServer.Util.DarkoComm).Server
 
 local services: { [string]: Service } = {}
 local ReplicationData: { [string]: string } = {}
@@ -207,6 +207,22 @@ function KnitServer.CreateService(serviceDef: ServiceDef): Service
 	return service
 end
 
+function KnitServer.PrintCallData()
+	local Log = ``
+
+	for i, v in pairs(services) do
+		Log = `\n\n{Log}\n{string.upper(i)}:`
+
+		for x, y in pairs(v.Network.Calls) do
+			if y and y > 0 then
+				Log = `{Log}\n{x}: {y}\n`
+			end
+		end
+	end
+
+	print(Log)
+end
+
 function KnitServer.SetupReplicator()
 	local BridgeReplicator = Instance.new("RemoteFunction")
 	BridgeReplicator.Name = "BridgeReplicator"
@@ -215,7 +231,8 @@ function KnitServer.SetupReplicator()
 		if not (startedComplete and started) then
 			return warn("Knit has not started yet!")
 		end
-
+		print(`[DarkoKnit] Replication Data transferred:`)
+		print(ReplicationData)
 		return ReplicationData
 	end
 

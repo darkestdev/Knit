@@ -113,7 +113,7 @@ KnitClient.Player = game:GetService("Players").LocalPlayer
 KnitClient.Util = (script.Parent :: Instance).Parent
 
 local Promise = require(KnitClient.Util.Promise)
-local DarkoCommClient = require(KnitClient.Util.DarkoComm.Client)
+local DarkoCommClient = require(KnitClient.Util.DarkoComm).Client
 
 local controllers: { [string]: Controller } = {}
 local services: { [string]: Service } = {}
@@ -148,9 +148,9 @@ end
 
 local function BuildService(serviceName: string)
 	local Middleware = GetMiddlewareForService(serviceName)
-	local ClientComm = DarkoCommClient.new(serviceName, ReplicationData[serviceName], Middleware)
+	local ClientComm = DarkoCommClient.new(serviceName, ReplicationData[serviceName])
 
-	services[serviceName] = ClientComm:GetServiceMethods()
+	services[serviceName] = ClientComm:GetServiceMethods(Middleware)
 
 	return services[serviceName]
 end
