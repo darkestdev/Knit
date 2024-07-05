@@ -211,12 +211,18 @@ function KnitServer.PrintCallData()
 	local Log = ``
 
 	for i, v in pairs(services) do
-		Log = `\n\n{Log}\n{string.upper(i)}:`
+		local HigherThanZero = false
+		local ServiceString = ``
 
 		for x, y in pairs(v.Network.Calls) do
 			if y and y > 0 then
-				Log = `{Log}\n{x}: {y}\n`
+				HigherThanZero = true
+				ServiceString = `{ServiceString}\n--> {x}: {y}`
 			end
+		end
+
+		if HigherThanZero then
+			Log = `\n{Log}\n{string.upper(i)}:{ServiceString}`
 		end
 	end
 
