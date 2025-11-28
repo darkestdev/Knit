@@ -207,8 +207,19 @@ function KnitServer.CreateService(serviceDef: ServiceDef): Service
 	return service
 end
 
+local LastCalls = {}
+
 function KnitServer.PrintCallData()
 	local Log = ``
+	local Max = 0
+
+	for i, v in pairs(services) do
+		for x, y in pairs(v.Network.Calls) do
+			if y and y > 0 then
+				Max += 1
+			end
+		end
+	end
 
 	for i, v in pairs(services) do
 		local HigherThanZero = false
@@ -216,8 +227,22 @@ function KnitServer.PrintCallData()
 
 		for x, y in pairs(v.Network.Calls) do
 			if y and y > 0 then
+				if not LastCalls[v.Name] then
+					LastCalls[v.Name] = {}
+				end
+
+				if not LastCalls[v.Name][x] then
+					LastCalls[v.Name][x] = y
+				end
+
+				local Difference = y - LastCalls[v.Name][x]
+
 				HigherThanZero = true
-				ServiceString = `{ServiceString}\n--> {x}: {y}`
+				ServiceString = `{ServiceString}\n--> [{Difference >= 0 and `+` or `-`}{Difference}] [{math.floor(
+					(y / Max) * 100 * 100
+				) / 100}%] {x}: {y}`
+
+				LastCalls[v.Name][x] = y
 			end
 		end
 
